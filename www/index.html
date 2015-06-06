@@ -1,0 +1,349 @@
+﻿<HTML>
+<HEAD>
+<TITLE>Hex Column Multiplication Verifier</TITLE>
+
+
+<STYLE type="text/css">
+<!--
+
+.mono {
+	font-family: 'Courier New', monospace;
+	font-size: large;
+}
+
+-->
+</STYLE>
+
+
+<script type="text/javascript" src="cordova.js"></script>
+<SCRIPT language="javascript">
+<!--
+
+var base = 16;
+
+var figureCol = 4;
+var figureRow = 3;
+
+var hexCol = new Array();
+var hexRow = new Array();
+var hexSol = new Array();
+var hexRes = new Array();
+
+
+
+function initialize() {
+	var i;
+
+	var baseRadio = document.getElementsByName('base');
+	for ( i = 0; i < baseRadio.length; i++ ){
+		if ( baseRadio[i].checked ) {
+			base = baseRadio[i].value * 1;
+			break;
+		}
+	}
+
+	figureCol = document.getElementById('col').value * 1;
+	figureRow = document.getElementById('row').value * 1;
+
+	hexCol = new Array(figureCol);
+	hexRow = new Array(figureRow);
+	hexSol = new Array(figureRow);
+	hexRes = new Array();
+
+	for ( i = 0; i < figureCol; i++ ) {
+		hexCol[i] = randomUnique(hexCol);
+	}
+
+	for ( i = 0; i < figureRow; i++ ) {
+		hexRow[i] = randomUnique(hexRow);
+	}
+}
+
+
+function randomUnique(array) {
+	var i;
+	var digit = 0;
+
+	do {
+		if ( base == 16 && document.getElementById('weight').checked ) {
+			if ( Math.floor( Math.random() * 2 ) ) {
+				digit = Math.floor( Math.random() * 9 ) + 1;
+			} else {
+				digit = Math.floor( Math.random() * 6 ) + 10;
+			}
+		} else {
+			digit = Math.floor( Math.random() * ( base-1 ) ) + 1;
+		}
+
+		for ( i = 0; i < array.length; i++ ) {
+			if ( digit == array[i] ) {
+				digit = 0;
+				break;
+			}
+		}
+	} while ( digit == 0 );
+
+	return digit;
+}
+
+
+
+
+
+
+function calculate() {
+	var row, min;
+
+	for ( row = 0; row < figureRow; row++ ) {
+		hexSol[row] = carryChain(figureCol, 
+			function(col) {
+				var product = hexCol[col] * hexRow[row];
+
+				return product;
+			}
+		);
+	}
+
+	min = 0;
+
+	hexRes = carryChain(hexSol[figureRow-1].length + figureRow - 1, 
+		function(c) {
+			var row, col;
+			var sum = 0;
+
+			for ( row = min; row < figureRow && row <= c; row++ ) {
+				col = c - row;
+
+				sum += hexSol[row][col];
+
+				if ( col == hexSol[row].length - 1 ) {
+					min++;
+				}
+			}
+
+			return sum;
+		}
+	);
+}
+
+
+function carryChain(len, arithmetic) {
+	var col;
+	var result;
+	var carry = 0;
+	var vector = new Array();
+
+	for ( col = 0; col < len; col++ ) {
+		result = carry + arithmetic(col);
+
+		vector.push( result % base );
+		carry = Math.floor( result / base );
+	}
+
+	if ( carry > 0 ) {
+		vector.push( carry );
+	}
+
+	return vector;
+}
+
+
+
+
+
+
+function generate() {
+	var i;
+	var figureMax = ( figureCol > figureRow ? figureCol : figureRow ) + 1;
+	var inner = '';
+
+	inner += upperColumn(figureMax);
+
+	inner += '<tr align="center">';
+	for ( i = figureMax-1; i >= 0; i-- ) {
+		inner += '<td>&#160;</td>';
+	}
+	inner += '<td>&#160;</td>';
+	inner += '</tr>';
+
+	inner += '</table>';
+
+	document.getElementById('genHTML').innerHTML = inner;
+	document.getElementById('verHTML').innerHTML = '';
+	document.getElementById('ver').disabled = false;
+}
+
+
+function verify() {
+	var figureMax = hexRes.length;
+	var inner = '';
+
+	inner += upperColumn(figureMax);
+
+	inner += lowerColumn(figureMax);
+
+	document.getElementById('verHTML').innerHTML = inner;
+}
+
+
+
+function convertRow(vector, max, min) {
+	var i;
+	var hex = ['A', 'B', 'C', 'D', 'E', 'F'];
+	var inner = '';
+
+	for ( i = min; i < max - vector.length; i++ ) {
+		inner += '<td>&#160;&#160;</td>';
+	}
+
+	for ( i = vector.length-1; i >= 0; i-- ) {
+		if (vector[i] >= 10) {
+			inner += '<td>&#160;' + hex[vector[i]-10] + '</td>';
+		} else {
+			inner += '<td>&#160;' + vector[i] + '</td>';
+		}
+	}
+
+	return inner;
+}
+
+
+
+function upperColumn(max) {
+	var inner = '<table border="0" cellspacing="0" cellpadding="0" valign="bottom" class="mono" style="border: solid 2px #cccccc;">';
+
+	inner += '<tr align="left">';
+	inner += convertRow(hexCol, max, 0);
+	inner += '<td><span style="font-size: x-small;">(' + base + '</span>&#160;</td>';
+	inner += '</tr>';
+
+	inner += '<tr align="left" style="text-decoration:underline;">';
+	inner += '<td>&times;&#160;</td>';
+	inner += convertRow(hexRow, max, 1);
+	inner += '<td><span style="font-size: x-small;">(' + base + '</span>&#160;</td>';
+	inner += '</tr>';
+
+	return inner;
+}
+
+
+function lowerColumn(max) {
+	var i, row;
+	var inner = '';
+
+	for ( row = 0; row < figureRow; row++ ) {
+		if ( row == figureRow-1 ) {
+			inner += '<tr align="left" style="text-decoration:underline;">';
+		} else {
+			inner += '<tr align="left">';
+		}
+
+		inner += convertRow(hexSol[row], max, row);
+		for ( i = 0; i < row; i++ ) {
+			inner += '<td>&#160;&#160;</td>';
+		}
+		inner += '<td>&#160;&#160;</td>';
+		inner += '</tr>';
+	}
+
+	inner += '<tr align="center">';
+	inner += convertRow(hexRes, max, 0);
+	inner += '<td>&#160;</td>';
+	inner += '</tr>';
+
+	inner += '</table>';
+
+	return inner;
+}
+
+//-->
+</SCRIPT>
+</HEAD>
+
+
+<BODY>
+<FORM>
+<TABLE class="mono">
+  <TR>
+    <TD>
+
+      <TABLE border="0" cellspacing="1" cellpadding="0" class="mono" style="border: solid 2px #cccccc;">
+        <TR>
+          <TD>
+            <INPUT type="radio" name="base" value="16" onClick="document.getElementById('weight').disabled = false;" checked>Hex&#160;<br>
+            <INPUT type="radio" name="base" value="8" onClick="document.getElementById('weight').disabled = true;">Oct&#160;
+          </TD>
+        </TR>
+      </TABLE>
+
+    </TD>
+    <TD>&#160;</TD>
+    <TD>
+
+      <TABLE border="0" cellspacing="1" cellpadding="0" class="mono">
+        <TR>
+          <TD>
+          </TD>
+          <TD>
+            <SELECT id="col" class="mono">
+            <OPTION value="5">5</OPTION>
+            <OPTION value="4" selected>4</OPTION>
+            <OPTION value="3">3</OPTION>
+            <OPTION value="2">2</OPTION>
+            </SELECT>digits
+          </TD>
+        </TR>
+        <TR>
+          <TD>
+            &times;
+          </TD>
+          <TD>
+            <SELECT id="row" class="mono">
+            <OPTION value="4">4</OPTION>
+            <OPTION value="3" selected>3</OPTION>
+            <OPTION value="2">2</OPTION>
+            </SELECT>digits
+          </TD>
+        </TR>
+      </TABLE>
+
+    </TD>
+  </TR>
+  <TR>
+    <TD colspan="3">
+      <INPUT type="checkbox" id="weight" value="1" checked>Weight on A-F<BR>
+    </TD>
+  </TR>
+</TABLE>
+
+<HR>
+<TABLE width="100%">
+  <TR>
+    <TD align="right">
+      <input type="button" id="gen" value="Generate" class="mono" onClick="initialize();calculate();generate();">
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      <DIV id="genHTML"></DIV>
+    </TD>
+  </TR>
+</TABLE>
+
+<HR>
+<TABLE width="100%">
+  <TR>
+    <TD align="right">
+      <input type="button" id="ver" value="Verify" class="mono" onClick="verify();" disabled>
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+      <DIV id="verHTML"></DIV>
+    </TD>
+  </TR>
+</TABLE>
+
+</FORM>
+</BODY>
+</HTML>

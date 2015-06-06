@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+	<widget xmlns   = "http://www.w3.org/ns/widgets"
+		xmlns:gap   = "http://phonegap.com/ns/1.0"
+		id          = "com.hellofrontier.HexMulti"
+		versionCode = "30"
+		version     = "1.2.0" >
+
+	<name>HexMulti</name>
+
+	<description>
+		Hex Column Multiplication Generator
+	</description>
+
+	<author href="https://build.phonegap.com" email="sakitomoo@gmail.com">
+		Tomoko Osaki
+	</author>
+
+	<gap:platform name="android" />
+
+	<preference name="orientation" value="portrait" />
+
+</widget>
